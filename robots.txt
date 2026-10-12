@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://novaialabs-commits.github.io/csv-merge-tool/sitemap.xml

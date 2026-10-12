@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CSV・Excel 結合と重複削除（無料・ブラウザ内で完結）</title>
 <meta name="description" content="複数のCSV・Excelファイルを1つに結合し、重複行を削除する無料ツール。ファイルはアップロードされず、すべてお使いのブラウザ内で処理されます。Shift_JISのCSVにも対応。">
+<link rel="canonical" href="https://novaialabs-commits.github.io/csv-merge-tool/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV・Excel 結合と重複削除","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"inLanguage":"ja"}</script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root { --ink:#1F2937; --sub:#6B7280; --accent:#0F766E; --line:#D1D5DB; --bg:#F8FAFC; --card:#FFFFFF; --warn:#B45309; }
@@ -59,6 +61,15 @@
     <h2 style="margin-top:0;font-size:1.1rem">うまくいかないときは</h2>
     <p class="note">列名がファイルごとに違う、日付の表記を揃えたい、Excelの形で受け取りたい、などはツールでは対応していません。<br>
     個別のご依頼は <span id="svc">ココナラで受付予定（準備中）</span> です。処理前後の件数レポートを付けて納品します。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem">よくある質問</h2>
+    <p><b>ファイルはアップロードされますか？</b><br><span class="note">いいえ。処理はすべてお使いのブラウザ内で行われ、ファイルの内容はどこにも送信されません。</span></p>
+    <p><b>Excelで開くと文字化けします</b><br><span class="note">ダウンロードしたCSVは文字化けしにくい形式（UTF-8 BOM付き）で保存しています。Shift_JISのCSVも読み込めます。</span></p>
+    <p><b>何行まで処理できますか？</b><br><span class="note">1万行程度は数秒以内で処理できることを確認しています（パソコンの性能によります）。</span></p>
+    <p><b>先頭の0（商品コード「00123」など）は消えませんか？</b><br><span class="note">文字列として扱うため、先頭の0は保持されます。</span></p>
+    <p><b>重複はどう判定しますか？</b><br><span class="note">選んだ列（例: 注文番号）が同じ行を重複とみなし、最初に出てきた行を残します。列を選ばない場合は、すべての列が一致した行を重複とみなします。</span></p>
   </div>
 
   <p class="note">このツールは PROJECT MONEY が公開しています。処理はすべてブラウザ内で行われ、ファイルの内容が外部に送られることはありません（ページの読み込みに jsDelivr からライブラリを取得します）。</p>
