@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSV・Excel 結合と重複削除（無料・ブラウザ内で完結）</title>
+<meta name="description" content="複数のCSV・Excelファイルを1つに結合し、重複行を削除する無料ツール。ファイルはアップロードされず、すべてお使いのブラウザ内で処理されます。Shift_JISのCSVにも対応。">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root { --ink:#1F2937; --sub:#6B7280; --accent:#0F766E; --line:#D1D5DB; --bg:#F8FAFC; --card:#FFFFFF; --warn:#B45309; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#E5E7EB; --sub:#9CA3AF; --accent:#2DD4BF; --line:#374151; --bg:#111827; --card:#1F2937; --warn:#FBBF24; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; line-height:1.7; }
+  main { max-width:760px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; }
+  .lead { color:var(--sub); margin:0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:16px; }
+  label { display:block; font-weight:600; margin:12px 0 4px; }
+  input[type=text], select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font-size:1rem; }
+  input[type=file] { width:100%; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 18px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:16px; }
+  button:disabled { opacity:.5; cursor:default; }
+  table { width:100%; border-collapse:collapse; }
+  td { padding:6px 0; border-bottom:1px solid var(--line); }
+  td:last-child { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .note { color:var(--sub); font-size:.9rem; }
+  .warn { color:var(--warn); }
+  .hide { display:none; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>CSV・Excel 結合と重複削除</h1>
+  <p class="lead">無料・登録不要。ファイルはどこにも送信されず、お使いのブラウザの中だけで処理されます。</p>
+
+  <div class="card">
+    <label for="files">1. ファイルを選ぶ（CSV / xlsx、複数可）</label>
+    <input id="files" type="file" multiple accept=".csv,.xlsx,.xls">
+    <p class="note">同じ列名のファイルを結合します。文字コード（UTF-8 / Shift_JIS）は自動で判定します。</p>
+
+    <label for="key">2. 重複を判定する列（任意）</label>
+    <select id="key"><option value="">すべての列が一致したら重複とみなす</option></select>
+
+    <label><input id="strip" type="checkbox" checked> 前後の空白・全角スペースを取り除く</label>
+
+    <button id="run" disabled>結合して重複を削除</button>
+  </div>
+
+  <div id="result" class="card hide">
+    <h2 style="margin-top:0;font-size:1.2rem">処理レポート</h2>
+    <table id="report"></table>
+    <p id="warns" class="note warn"></p>
+    <button id="dl">結果をCSVでダウンロード（Excelで開けます）</button>
+    <button id="dlDup" style="background:var(--sub)">削除した重複をダウンロード</button>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem">うまくいかないときは</h2>
+    <p class="note">列名がファイルごとに違う、日付の表記を揃えたい、Excelの形で受け取りたい、などはツールでは対応していません。<br>
+    個別のご依頼は <span id="svc">ココナラで受付予定（準備中）</span> です。処理前後の件数レポートを付けて納品します。</p>
+  </div>
+
+  <p class="note">このツールは PROJECT MONEY が公開しています。処理はすべてブラウザ内で行われ、ファイルの内容が外部に送られることはありません（ページの読み込みに jsDelivr からライブラリを取得します）。</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let tables = [], merged = [], dups = [], header = [];
+
+function decode(buf) {
+  const u8 = new Uint8Array(buf);
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(u8).replace(/^﻿/, ""); }
+  catch (e) { return new TextDecoder("shift_jis").decode(u8); }
+}
+
+async function readFile(f) {
+  const buf = await f.arrayBuffer();
+  let wb;
+  if (/\.csv$/i.test(f.name)) wb = XLSX.read(decode(buf), { type: "string", raw: true });
+  else wb = XLSX.read(buf, { type: "array", raw: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
+  return { name: f.name, header: (rows[0] || []).map(String), rows: rows.slice(1).filter(r => r.some(c => String(c).trim() !== "")) };
+}
+
+$("files").addEventListener("change", async e => {
+  tables = await Promise.all([...e.target.files].map(readFile));
+  header = tables[0] ? tables[0].header : [];
+  $("key").innerHTML = '<option value="">すべての列が一致したら重複とみなす</option>' +
+    header.map((h, i) => `<option value="${i}">${h.replace(/[<>&]/g, "")}</option>`).join("");
+  $("run").disabled = tables.length === 0;
+});
+
+$("run").addEventListener("click", () => {
+  const log = [], warns = [];
+  const clean = v => $("strip").checked ? String(v).replace(/　/g, " ").trim() : String(v);
+  merged = []; dups = [];
+  for (const t of tables) {
+    log.push([`読込 ${t.name}`, t.rows.length]);
+    if (t.header.join("\t") !== header.join("\t")) { warns.push(`「${t.name}」の列名が1つ目のファイルと違うため、結合しませんでした。`); continue; }
+    for (const r of t.rows) merged.push(header.map((_, i) => clean(r[i] ?? "")));
+  }
+  log.push(["結合後", merged.length]);
+  const k = $("key").value, seen = new Set(), kept = [];
+  for (const r of merged) {
+    const sig = k === "" ? r.join("\u0001") : r[+k];
+    if (seen.has(sig)) dups.push(r); else { seen.add(sig); kept.push(r); }
+  }
+  log.push(["重複を削除", "−" + dups.length]);
+  log.push(["結果", kept.length]);
+  merged = kept;
+  $("report").innerHTML = log.map(([a, b]) => `<tr><td>${String(a).replace(/[<>&]/g, "")}</td><td>${b} 件</td></tr>`).join("");
+  $("warns").textContent = warns.join(" ");
+  $("result").classList.remove("hide");
+});
+
+function download(rows, name) {
+  const esc = v => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  const csv = "﻿" + [header, ...rows].map(r => r.map(esc).join(",")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = name; a.click();
+}
+$("dl").addEventListener("click", () => download(merged, "結合結果.csv"));
+$("dlDup").addEventListener("click", () => download(dups, "削除した重複.csv"));
+</script>
+</body>
+</html>
