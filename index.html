@@ -42,7 +42,7 @@
     <p class="note">同じ列名のファイルを結合します。文字コード（UTF-8 / Shift_JIS）は自動で判定します。</p>
 
     <label for="key">2. 重複を判定する列（任意）</label>
-    <select id="key"><option value="">すべての列が一致したら重複とみなす</option></select>
+    <select id="key"><option value="">すべての列が一致したら重複とみなす</option><option value="none">重複を削除しない（結合・文字コード変換だけ）</option></select>
 
     <label><input id="strip" type="checkbox" checked> 前後の空白・全角スペースを取り除く</label>
 
@@ -70,6 +70,7 @@
     <p><b>Excelで開くと文字化けします</b><br><span class="note">ダウンロードしたCSVは文字化けしにくい形式（UTF-8 BOM付き）で保存しています。Shift_JISのCSVも読み込めます。</span></p>
     <p><b>何行まで処理できますか？</b><br><span class="note">1万行程度は数秒以内で処理できることを確認しています（パソコンの性能によります）。</span></p>
     <p><b>先頭の0（商品コード「00123」など）は消えませんか？</b><br><span class="note">ツールの中では文字列として扱うため、先頭の0は保持され、ダウンロードしたCSVにもそのまま出力されます。ただしExcelでダブルクリックして開くと、Excel側で消えることがあります（<a href="articles/csv-leading-zero.html">対処法</a>）。</span></p>
+    <p><b>Shift_JISのCSVをUTF-8に変換するだけでも使えますか？</b><br><span class="note">はい。ファイルを1つ選び、2.で「重複を削除しない」を選んで実行すると、UTF-8（BOM付き）のCSVとしてダウンロードできます。すべてのセルが空の行は除かれます。前後の空白を残したい場合は「前後の空白・全角スペースを取り除く」のチェックを外してください。</span></p>
     <p><b>重複はどう判定しますか？</b><br><span class="note">選んだ列（例: 注文番号）が同じ行を重複とみなし、最初に出てきた行を残します。列を選ばない場合は、すべての列が一致した行を重複とみなします。</span></p>
   </div>
 
@@ -107,7 +108,7 @@ async function readFile(f) {
 $("files").addEventListener("change", async e => {
   tables = await Promise.all([...e.target.files].map(readFile));
   header = tables[0] ? tables[0].header : [];
-  $("key").innerHTML = '<option value="">すべての列が一致したら重複とみなす</option>' +
+  $("key").innerHTML = '<option value="">すべての列が一致したら重複とみなす</option><option value="none">重複を削除しない（結合・文字コード変換だけ）</option>' +
     header.map((h, i) => `<option value="${i}">${h.replace(/[<>&]/g, "")}</option>`).join("");
   $("run").disabled = tables.length === 0;
 });
@@ -124,13 +125,14 @@ $("run").addEventListener("click", () => {
   log.push(["結合後", merged.length]);
   const k = $("key").value, seen = new Set(), kept = [];
   for (const r of merged) {
+    if (k === "none") { kept.push(r); continue; }
     const sig = k === "" ? r.join("\u0001") : r[+k];
     if (seen.has(sig)) dups.push(r); else { seen.add(sig); kept.push(r); }
   }
-  log.push(["重複を削除", "−" + dups.length]);
+  log.push(["重複を削除", k === "none" ? "しない" : "−" + dups.length]);
   log.push(["結果", kept.length]);
   merged = kept;
-  $("report").innerHTML = log.map(([a, b]) => `<tr><td>${String(a).replace(/[<>&]/g, "")}</td><td>${b} 件</td></tr>`).join("");
+  $("report").innerHTML = log.map(([a, b]) => `<tr><td>${String(a).replace(/[<>&]/g, "")}</td><td>${b}${typeof b === "number" || /^−/.test(b) ? " 件" : ""}</td></tr>`).join("");
   $("warns").textContent = warns.join(" ");
   $("result").classList.remove("hide");
 });
