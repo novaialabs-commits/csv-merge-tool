@@ -172,6 +172,52 @@ ARTICLES = [
 <p class="note">関数の仕様は Microsoft・Google の公式ヘルプ（2026年10月時点）に基づいています。本番の表に使う前に、答えが分かっている小さな表で試してください。</p>
 """,
     },
+    {
+        "slug": "excel-text-to-date",
+        "draft": True,  # ChatGPT REVISE 反映済み。混在式を Excel 実機で検算してから公開
+        "title": "Excelで文字列の日付を本当の日付に直す方法（2026/10/01・2026.10.01・20261001 が混ざった列）",
+        "desc": "「2026/10/01」「2026-10-02」「2026.10.03」「20261004」など、表記がばらばらで並べ替えや集計ができない日付の列を、DATEVALUE・DATE関数で本当の日付にそろえる方法をまとめました。",
+        "body": """
+<p>日付の列で並べ替えると順番がおかしい、月ごとに集計できない、SUMIFSで期間を指定しても合計が0になる。こうした場合、日付が<b>文字列</b>として入っていることがよくあります。複数のシステムから集めたCSVでは、表記がばらばらになりがちです。</p>
+
+<h2>まず確かめる：本当の日付か、文字列か</h2>
+<ul>
+<li>隣のセルに <code>=ISNUMBER(A2)</code> と入れます。<b>TRUE</b> なら数値、<b>FALSE</b> なら文字列などです。Excelの日付は内部では数値ですが、ふつうの数値や商品コードでも TRUE になるため、これだけでは日付と断定できません</li>
+<li>表示形式を「標準」にして5桁ほどの数値に変われば、日付のシリアル値である可能性があります。ふつうの数値との区別には、元データの意味や想定する日付の範囲の確認が必要です</li>
+</ul>
+
+<h2>方法1：DATEVALUEで変換する（「2026/10/01」など）</h2>
+<p><code>=DATEVALUE(A2)</code></p>
+<ul>
+<li>DATEVALUEは、文字列として入っている日付を、Excelが日付として扱えるシリアル値に変換します</li>
+<li>結果は数値で表示されるので、セルの表示形式を<b>日付</b>にします</li>
+<li>DATEVALUEは、Excelが日付として認識できる文字列を変換します。「2026-10-01」のようなハイフン区切りは、環境によって認識できない場合があります。どの表記を読めるかはパソコンの日付の設定によって変わることがあります。結果が <code>#VALUE!</code> になった行は、方法2・3を使います</li>
+</ul>
+<p>変換が終わったら、結果の列をコピーし、<b class="ui">形式を選択して貼り付け</b> → <b class="ui">値</b> で元の列に貼り付けると、数式ではなく日付の値として残せます（元のデータはコピーを取っておきましょう）。</p>
+
+<h2>方法2：「.」区切り（2026.10.01）は記号を置き換えてから</h2>
+<p><code>=DATEVALUE(SUBSTITUTE(A2,".","/"))</code></p>
+<p>SUBSTITUTEで「.」を「/」に置き換えてから変換します。</p>
+
+<h2>方法3：区切りのない8桁（20261001）はDATEで組み立てる</h2>
+<p><code>=DATE(LEFT(A2,4),MID(A2,5,2),RIGHT(A2,2))</code></p>
+<p>先頭4文字を年、5文字目から2文字を月、最後の2文字を日として、DATE関数で日付を作ります。8桁がそろっていない行（「2026101」など）は正しく変換できないため、先に <code>=LEN(A2)</code> で桁数を確かめてください。</p>
+<p>8桁でも正しい日付とは限りません。たとえば「20260230」は存在しない日付ですが、DATE関数は月日を繰り上げて「2026年3月2日」にしてしまいます。変換後は、元の8桁と一致するかを確かめてください（下の式はこの確認を含みます）。</p>
+
+<h2>表記が混ざった列を1本の式で直す</h2>
+<p><code>=IF(A2="","",IF(AND(LEN(A2&amp;"")=8,ISERROR(FIND("/",A2&amp;"")),ISERROR(FIND("-",A2&amp;"")),ISERROR(FIND(".",A2&amp;""))),IFERROR(IF(TEXT(DATE(LEFT(A2,4),MID(A2,5,2),RIGHT(A2,2)),"yyyymmdd")=A2&amp;"",DATE(LEFT(A2,4),MID(A2,5,2),RIGHT(A2,2)),"要確認"),"要確認"),IF(ISNUMBER(A2),A2,IFERROR(DATEVALUE(SUBSTITUTE(A2,".","/")),"要確認"))))</code></p>
+<ul>
+<li>空欄は空欄のまま。区切り記号のない8文字はDATEで組み立て、元の8桁と一致したときだけ日付にします（「20260230」などは「要確認」）。すでに数値ならそのまま、それ以外は「.」を「/」に置き換えてDATEVALUEで変換します</li>
+<li>8文字の判定を先にしているのは、数値として入っている「20261001」を日付のシリアル値と取り違えないためです</li>
+<li>どれでも変換できなかった行は「要確認」と表示されます。フィルターで「要確認」だけを表示して、元の値を確かめてください</li>
+<li>この式は代表的な日付の表記に対応する例です。数値として保存済みの値は、日付のシリアル値と区別できない場合があります。「要確認」にならなくても結果が正しいとは限らないため、元データの意味と日付の範囲を確認してください</li>
+</ul>
+
+<h2>確かめ方</h2>
+<p>件数を確かめます（例：2〜100行目）。元データの入力件数 <code>=COUNTIF(A2:A100,"&lt;&gt;")</code>、変換後の数値の件数 <code>=COUNT(B2:B100)</code>、要確認の件数 <code>=COUNTIF(B2:B100,"要確認")</code>。入力件数 ＝ 数値の件数 ＋ 要確認の件数 になっているかを確認します。ただし、この一致だけでは日付の正しさは保証できません。存在しない日付、想定の範囲外の日付、月と日が逆になった値も確認してください。さらに、最初と最後の日付、月末（31日・30日）、年をまたぐ日付を数件選んで、元の表記と一致しているかを目で確かめてください。「01/02/2026」のように月と日の順番が分からない表記が混ざっている場合は、式だけで判断せず、データの出どころに確認してください。</p>
+<p class="note">関数の仕様は Microsoft の公式ヘルプ（2026年10月時点）に基づいています。本番の表に使う前に、答えが分かっている小さな表で試してください。</p>
+""",
+    },
 ]
 
 FOOT = """
@@ -184,10 +230,11 @@ FOOT = """
 
 
 PROMO = {
-    "csv-mojibake": "文字コードが混在した複数のCSVをまとめて整えたい場合は、<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・見積り相談制）</a>でも受け付けています。",
-    "csv-leading-zero": "商品コードの先頭の0や日付の表記をそろえた形で受け取りたい場合は、<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・見積り相談制）</a>でも受け付けています。",
-    "excel-compare-two-lists": "数式を組む時間がない、条件が複雑で式がうまく作れない場合は、<a href=\"https://coconala.com/services/4449267\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・Excel関数の作成と修正、見積り相談制）</a>でも受け付けています。",
-    "csv-merge-dedupe": "列名がファイルごとに違う、どの行を残すかの条件があるなど、ツールで対応できない結合は<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・見積り相談制）</a>で受け付けています。",
+    "csv-mojibake": "<b>この方法で解決しない場合</b>：たとえば「店舗ごとに文字コードが違うCSVが20本あり、1つにまとめたい」「取り込み先のシステムがShift_JIS指定」といった作業は、<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・見積り相談制）</a>で受け付けています。処理前後の件数レポートつきです。1ファイルを変換するだけなら、<a href=\"../\">無料ツール</a>の「重複を削除しない」で変換できます。",
+    "csv-leading-zero": "<b>この方法で解決しない場合</b>：たとえば「先頭の0が消えた状態で保存してしまったファイルを、元の桁数に戻したい（桁数の規則が分かっている場合）」「商品コードと日付の表記をそろえたExcelで受け取りたい」といった作業は、<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・見積り相談制）</a>で受け付けています。",
+    "excel-compare-two-lists": "<b>数式を組む時間がない場合</b>：たとえば「先月と今月の顧客リストを突き合わせ、増えた人・減った人・金額が変わった人を色分けしたい」「同じコードが複数行ある表を合計してから比べたい」といった数式は、<a href=\"https://coconala.com/services/4449267\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・Excel関数の作成と修正、見積り相談制）</a>で作成します。架空データでの検算結果つきです。",
+    "excel-text-to-date": "<b>件数が多い・表記が複雑な場合</b>：たとえば「複数のシステムから出したCSVで、日付が4種類の書き方で混ざっている」「変換できなかった行だけを一覧にしてほしい」といった作業は、<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・CSV・Excelの結合と整理、見積り相談制）</a>で受け付けています。日付の統一と、変換できなかった行の一覧をお渡しします。",
+    "csv-merge-dedupe": "<b>ツールで対応できない場合</b>：たとえば「ファイルごとに列名が違う（『注文No』と『注文番号』など）」「同じ顧客の行のうち、日付が新しい方を残したい」といった結合は、<a href=\"https://coconala.com/services/4449146\" target=\"_blank\" rel=\"noopener\">ココナラ（有料・見積り相談制）</a>で受け付けています。処理前後の件数レポートつきです。",
 }
 
 
@@ -217,9 +264,13 @@ def page(title, desc, url, body):
 
 def main():
     for a in ARTICLES:
+        if a.get("draft"):
+            (OUT / "drafts").mkdir(exist_ok=True)
+            (OUT / "drafts" / f"{a['slug']}.html").write_text(page(a["title"], a["desc"], "", a["body"] + FOOT.replace("{PROMO}", PROMO[a["slug"]])), encoding="utf-8")
+            continue
         url = f"{BASE}articles/{a['slug']}.html"
         (OUT / f"{a['slug']}.html").write_text(page(a["title"], a["desc"], url, a["body"] + FOOT.replace("{PROMO}", PROMO[a["slug"]])), encoding="utf-8")
-    items = "\n".join(f'<li><a href="{a["slug"]}.html">{html.escape(a["title"])}</a><br><span class="note">{html.escape(a["desc"])}</span></li>' for a in ARTICLES)
+    items = "\n".join(f'<li><a href="{a["slug"]}.html">{html.escape(a["title"])}</a><br><span class="note">{html.escape(a["desc"])}</span></li>' for a in ARTICLES if not a.get("draft"))
     body = f'<ul style="list-style:none;padding:0">{items}</ul><p class="note"><a href="../">← 無料ツールに戻る</a></p>'
     (OUT / "index.html").write_text(page("CSV・Excelのよくあるトラブルと対処法", "CSVをExcelで扱うときによくある文字化け・先頭の0の消失・複数ファイルの結合と重複削除の対処法をまとめた記事一覧です。", f"{BASE}articles/", body), encoding="utf-8")
 
