@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSVをExcelで開くと先頭の0が消える・日付に変わるのを防ぐ方法</title>
+<meta name="description" content="商品コードの「00123」が「123」になる、「1-2」が「1月2日」になる、長い番号が「1.23E+15」になる。CSVをExcelで開いたときの自動変換を防ぐ方法をまとめました。">
+<link rel="canonical" href="https://novaialabs-commits.github.io/csv-merge-tool/articles/csv-leading-zero.html">
+<style>
+:root { --ink:#1F2937; --sub:#6B7280; --accent:#0F766E; --line:#D1D5DB; --bg:#F8FAFC; --card:#FFFFFF; --code:#EEF2F6; }
+@media (prefers-color-scheme: dark) { :root { --ink:#E5E7EB; --sub:#9CA3AF; --accent:#2DD4BF; --line:#374151; --bg:#111827; --card:#1F2937; --code:#273244; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; line-height:1.8; }
+main { max-width:760px; margin:0 auto; padding:32px 16px 64px; }
+h1 { font-size:1.5rem; line-height:1.4; margin:0 0 8px; }
+h2 { font-size:1.15rem; margin:32px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+.meta, .note { color:var(--sub); font-size:.9rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin:16px 0; }
+code, b.ui { background:var(--code); border-radius:4px; padding:0 4px; font-weight:600; }
+a { color:var(--accent); }
+ol, ul { padding-left:1.4em; }
+</style>
+</head>
+<body>
+<main>
+<p class="meta"><a href="../">CSV・Excel 結合と重複削除（無料ツール）</a> ／ 記事</p>
+<h1>CSVをExcelで開くと先頭の0が消える・日付に変わるのを防ぐ方法</h1>
+<p class="meta">2026年10月13日公開</p>
+
+<p>CSVをExcelで開くと、次のような「勝手な変換」が起きることがあります。</p>
+<ul>
+<li>商品コード <b>00123</b> → <b>123</b>（先頭の0が消える）</li>
+<li>型番 <b>1-2</b> → <b>1月2日</b>（日付になる）</li>
+<li>長い番号 <b>1234567890123456789</b> → 15桁を超える部分が <b>0</b> に置き換わり、表示も <b>1.23457E+18</b> のような指数形式になることがある</li>
+</ul>
+<p>Excelがダブルクリックで開いたCSVの中身を「数値」や「日付」だと推測して変換するのが原因です。一度この状態で上書き保存すると、元の値には戻せません。</p>
+
+<h2>方法1：取り込むときに「文字列」として読む</h2>
+<ol>
+<li><b class="ui">データ</b> タブ → <b class="ui">テキストまたはCSVから</b> でファイルを指定</li>
+<li>プレビュー画面の <b class="ui">データ型検出</b> を <b class="ui">データ型を検出しない</b> にする</li>
+<li><b class="ui">読み込み</b>。すべての列が文字列のまま取り込まれ、先頭の0や型番がそのまま残ります</li>
+</ol>
+<p>一部の列だけ数値として計算したい場合は、<b class="ui">データの変換</b> を押して開く画面（Power Query エディター）で、列ごとにデータ型を <b class="ui">テキスト</b> や <b class="ui">整数</b> に指定してから読み込みます。</p>
+
+<h2>方法2：Excelの自動変換の設定を確認する</h2>
+<p>対応するWindows版のMicrosoft 365 Excelでは、<b class="ui">ファイル</b> → <b class="ui">オプション</b> → <b class="ui">データ</b> → <b class="ui">自動データ変換</b> で、先頭の0の削除や長い数値の変換などを個別に止められます。表示されない場合は、Excelのバージョンや更新状況を確認してください。設定を変える前に失われたデータは、この操作では元に戻りません。</p>
+
+<h2>方法3：開くだけならブラウザの無料ツールを使う</h2>
+<p>CSVを結合したり重複を消したりするだけなら、<a href="../">CSV・Excel 結合と重複削除ツール</a>（無料・登録不要）も使えます。値を文字列として扱うため、ツールの中では先頭の0や長い番号は変わりません。ただし、出力したCSVをExcelでダブルクリックして開くと、Excel側で同じ変換が起きます。出力したCSVも、上の方法1で開いてください。</p>
+
+<h2>覚えておくこと</h2>
+<p>「ダブルクリックで開いて、そのまま上書き保存」が一番危険です。大事なCSVは、まずコピーを取ってから作業してください。</p>
+
+<div class="card note">
+制作・確認について：本記事の原案は生成AI（Claude）を使用して作成し、Excel・Power Queryに関する技術的な記述を別の生成AI（ChatGPT）でMicrosoft公式資料と照合しました。実際の画面表示や利用できる機能は、Excelのバージョン・OS・更新状況によって異なる場合があります。<br>
+商品コードの先頭の0や日付の表記をそろえた形で受け取りたい場合は、<a href="https://coconala.com/services/4449146" target="_blank" rel="noopener">ココナラ（有料・見積り相談制）</a>でも受け付けています。
+</div>
+<p class="note"><a href="../">← 無料ツールに戻る</a>　|　<a href="./">記事一覧</a></p>
+
+</main>
+</body>
+</html>

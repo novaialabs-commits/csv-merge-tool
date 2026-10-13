@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>複数のCSVを1つにまとめて重複を削除する方法（Excel・無料ツール）</title>
+<meta name="description" content="月ごとに分かれた売上CSVなど、複数のCSVファイルを1つにまとめ、重複した行を削除する方法を、ExcelのPower Queryと無料のブラウザツールの2通りで説明します。">
+<link rel="canonical" href="https://novaialabs-commits.github.io/csv-merge-tool/articles/csv-merge-dedupe.html">
+<style>
+:root { --ink:#1F2937; --sub:#6B7280; --accent:#0F766E; --line:#D1D5DB; --bg:#F8FAFC; --card:#FFFFFF; --code:#EEF2F6; }
+@media (prefers-color-scheme: dark) { :root { --ink:#E5E7EB; --sub:#9CA3AF; --accent:#2DD4BF; --line:#374151; --bg:#111827; --card:#1F2937; --code:#273244; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; line-height:1.8; }
+main { max-width:760px; margin:0 auto; padding:32px 16px 64px; }
+h1 { font-size:1.5rem; line-height:1.4; margin:0 0 8px; }
+h2 { font-size:1.15rem; margin:32px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+.meta, .note { color:var(--sub); font-size:.9rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin:16px 0; }
+code, b.ui { background:var(--code); border-radius:4px; padding:0 4px; font-weight:600; }
+a { color:var(--accent); }
+ol, ul { padding-left:1.4em; }
+</style>
+</head>
+<body>
+<main>
+<p class="meta"><a href="../">CSV・Excel 結合と重複削除（無料ツール）</a> ／ 記事</p>
+<h1>複数のCSVを1つにまとめて重複を削除する方法（Excel・無料ツール）</h1>
+<p class="meta">2026年10月13日公開</p>
+
+<p>月ごと・店舗ごとに分かれたCSVを1つの表にまとめたい。期間が重なっていて、同じ注文が2回入ってしまう。そんなときの手順です。</p>
+
+<h2>前提：列名をそろえる</h2>
+<p>結合する前に、各CSVの列名・列数・列の並び・文字コードを確認してください。下で紹介する方法は、どちらも同じ構造のファイルをまとめる用途に向いています。列名が違ったり列の位置がずれたりすると、意図しない列への取り込みや欠損、エラーの原因になります。結合するCSVだけを専用のフォルダーに入れ、バックアップや別形式のファイルが混ざらないようにしましょう。</p>
+
+<h2>方法1：ExcelのPower Queryでフォルダーごとまとめる</h2>
+<ol>
+<li>まとめたいCSVだけを1つのフォルダーに入れる</li>
+<li><b class="ui">データ</b> タブ → <b class="ui">データの取得</b> → <b class="ui">ファイルから</b> → <b class="ui">フォルダーから</b> でそのフォルダーを選ぶ</li>
+<li><b class="ui">結合</b> → <b class="ui">データの結合と変換</b> を選ぶ。文字化けする場合は、この画面の <b class="ui">元のファイル</b> で文字コードを選び直す</li>
+<li>Power Query エディターで結合結果・列名・データ型を確認する</li>
+<li>重複を判定する列（例：注文番号）を選ぶ。すべての列が一致する行だけを消したい場合は、すべての列を選ぶ</li>
+<li><b class="ui">ホーム</b> → <b class="ui">行の削除</b> → <b class="ui">重複の削除</b></li>
+<li><b class="ui">閉じて読み込む</b></li>
+</ol>
+<p>次の月のCSVをフォルダーに追加したら、<b class="ui">データ</b> → <b class="ui">すべて更新</b> で結果が更新されます。注意：Power Queryの <b class="ui">重複の削除</b> では、重複した行のうち<b>どの行が残るかは保証されていません</b>（並べ替えておいても、その順序が保たれるとは限りません）。例えば同じ顧客IDに古い住所と新しい住所がある場合、新しい方が残るとは限りません。「最新の行を残す」などの条件がある場合は、単純な重複の削除ではなく、条件に合う行を選ぶ処理が必要です。</p>
+<p class="note">Windows版Excelを想定しています。バージョンや更新状況によってメニューの表示が異なる場合があります。</p>
+
+<h2>方法2：無料のブラウザツールでまとめる</h2>
+<p>Power Queryの設定が面倒なときや、1回だけまとめたいときは、<a href="../">CSV・Excel 結合と重複削除ツール</a>が使えます。</p>
+<ol>
+<li>ファイルを複数選ぶ（CSV・xlsx、UTF-8／Shift_JISは自動判定）</li>
+<li>重複を判定する列を選ぶ（選ばなければ、すべての列が一致する行を重複とみなします）</li>
+<li><b class="ui">結合して重複を削除</b> → 読み込み件数・削除件数・結果件数が表示される。重複した行は、<b>先に読み込んだファイル・上にある行が残ります</b></li>
+<li>結果と、削除した重複行をそれぞれCSVでダウンロード</li>
+</ol>
+<p>処理はブラウザの中だけで行われ、ファイルの内容はどこにも送信されません。1万行・重複100件の架空データで、重複削除の処理が0.4秒ほどで終わることを確認しています（2026年10月、Chrome、一般的なノートパソコン。読み込み時間は含みません）。作業前に元ファイルをコピーし、出力結果の件数と内容を確認してください。</p>
+
+<h2>必ず件数を確かめる</h2>
+<p>結合と重複削除だけを行った場合は、「取り込んだデータ行数（見出し行を除く）＝ 重複削除後の行数 ＋ 削除した行数」になっているか確認してください。合わない場合は、読み込みエラーや空行の扱い、意図しない絞り込みを確認します。件数が合っていても内容が正しいとは限らないため、代表的な行の値も確かめましょう。</p>
+
+<div class="card note">
+制作・確認について：本記事の原案は生成AI（Claude）を使用して作成し、Excel・Power Queryに関する技術的な記述を別の生成AI（ChatGPT）でMicrosoft公式資料と照合しました。実際の画面表示や利用できる機能は、Excelのバージョン・OS・更新状況によって異なる場合があります。<br>
+列名がファイルごとに違う、どの行を残すかの条件があるなど、ツールで対応できない結合は<a href="https://coconala.com/services/4449146" target="_blank" rel="noopener">ココナラ（有料・見積り相談制）</a>で受け付けています。
+</div>
+<p class="note"><a href="../">← 無料ツールに戻る</a>　|　<a href="./">記事一覧</a></p>
+
+</main>
+</body>
+</html>
