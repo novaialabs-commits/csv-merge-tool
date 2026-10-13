@@ -29,6 +29,9 @@
 - [複数のCSVを1つにまとめて重複を削除する方法](https://novaialabs-commits.github.io/csv-merge-tool/articles/csv-merge-dedupe.html)
 - [Excelで2つの表を突き合わせて、片方にしかないデータを見つける方法](https://novaialabs-commits.github.io/csv-merge-tool/articles/excel-compare-two-lists.html)
 
+## 作業見本
+- [CSV整理・UI翻訳・Excel関数の作業見本（架空データ）](https://novaialabs-commits.github.io/csv-merge-tool/portfolio/)
+
 ## ツールで対応できない作業
 列名がファイルごとに違う、日付の表記をそろえたい、Excel の形で受け取りたいなどの個別作業は、[ココナラ（有料・見積り相談制）](https://coconala.com/services/4449146)で受け付けています。ツール自体は今後も無料です。
 
