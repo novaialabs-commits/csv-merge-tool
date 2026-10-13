@@ -29,6 +29,9 @@
 - [複数のCSVを1つにまとめて重複を削除する方法](https://novaialabs-commits.github.io/csv-merge-tool/articles/csv-merge-dedupe.html)
 - [Excelで2つの表を突き合わせて、片方にしかないデータを見つける方法](https://novaialabs-commits.github.io/csv-merge-tool/articles/excel-compare-two-lists.html)
 
+## ほかの無料ツール
+- [翻訳ファイル（JSON）のチェッカー](https://novaialabs-commits.github.io/csv-merge-tool/i18n-check/): 原文と訳の JSON を比べ、キーの欠落・空の訳・プレースホルダーやタグの不一致・用語の不一致を一覧にします（ブラウザ内で処理）
+
 ## 作業見本
 - [CSV整理・UI翻訳・Excel関数の作業見本（架空データ）](https://novaialabs-commits.github.io/csv-merge-tool/portfolio/)
 

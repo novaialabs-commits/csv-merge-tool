@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>翻訳ファイルのチェッカー（JSON・無料）</title>
+<meta name="description" content="アプリの翻訳ファイル（JSON）の原文と訳を比べて、キーの欠落、空の訳、{name}・%s などのプレースホルダーやHTMLタグの不一致、用語の不一致をブラウザだけで確認できる無料ツールです。">
+<link rel="canonical" href="https://novaialabs-commits.github.io/csv-merge-tool/i18n-check/">
+<style>
+:root { --ink:#1F2937; --sub:#6B7280; --accent:#0F766E; --line:#D1D5DB; --bg:#F8FAFC; --card:#FFFFFF; --code:#EEF2F6; --bad:#B91C1C; --warn:#B45309; }
+@media (prefers-color-scheme: dark) { :root { --ink:#E5E7EB; --sub:#9CA3AF; --accent:#2DD4BF; --line:#374151; --bg:#111827; --card:#1F2937; --code:#273244; --bad:#F87171; --warn:#FBBF24; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; line-height:1.7; }
+main { max-width:820px; margin:0 auto; padding:32px 16px 64px; }
+h1 { font-size:1.5rem; line-height:1.4; margin:0 0 8px; }
+h2 { font-size:1.1rem; margin:0 0 8px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin:16px 0; }
+.note { color:var(--sub); font-size:.9rem; }
+label { display:block; font-weight:600; margin:12px 0 4px; }
+input[type=file] { max-width:100%; }
+button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 16px; font-size:1rem; margin:12px 8px 0 0; cursor:pointer; }
+button.sub { background:var(--sub); }
+button:disabled { opacity:.5; cursor:default; }
+table { border-collapse:collapse; width:100%; font-size:.9rem; }
+th, td { border:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:top; word-break:break-all; }
+.bad { color:var(--bad); font-weight:600; }
+.warn { color:var(--warn); font-weight:600; }
+code { background:var(--code); border-radius:4px; padding:0 4px; }
+.hide { display:none; }
+a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+<p class="note"><a href="../">CSV・Excel 結合と重複削除（無料ツール）</a> ／ 翻訳ファイルのチェッカー</p>
+<h1>翻訳ファイルのチェッカー（JSON・無料）</h1>
+<p>アプリやWebサービスの翻訳ファイル（キーと文字列のJSON）の<b>原文</b>と<b>訳</b>を比べて、機械的に見つけられる間違いを一覧にします。登録不要で、ファイルはブラウザの中だけで処理され、どこにも送信されません。</p>
+
+<div class="card">
+  <label for="src">1. 原文のJSON（例：en.json）</label>
+  <input id="src" type="file" accept=".json,application/json">
+  <label for="dst">2. 訳のJSON（例：ja.json）</label>
+  <input id="dst" type="file" accept=".json,application/json">
+  <label for="glo">3. 用語表（任意・CSV。1行目の見出しは <code>en,ja</code>）</label>
+  <input id="glo" type="file" accept=".csv,text/csv">
+  <p class="note">用語表で ja と en が同じ行（例：製品名）は「翻訳しない語」として扱い、訳から消えていないかを確認します。</p>
+  <button id="run" disabled>チェックする</button>
+  <button id="demo" class="sub">架空のサンプルで試す</button>
+</div>
+
+<div id="result" class="card hide">
+  <h2>結果</h2>
+  <p id="summary"></p>
+  <table id="table"><thead><tr><th>判定</th><th>種類</th><th>キー</th><th>内容</th></tr></thead><tbody></tbody></table>
+  <button id="dl" class="sub">結果をCSVでダウンロード</button>
+</div>
+
+<div class="card">
+  <h2>チェックすること</h2>
+  <ul>
+    <li><span class="bad">不合格</span>：訳がないキー、原文にないキー、空の訳、プレースホルダー（<code>{name}</code>、<code>{{count}}</code>、<code>%s</code>、<code>%1$d</code>、<code>%@</code>、<code>%%</code>）・HTMLタグ・改行（文字列中の改行と <code>\n</code>）の種類や数の不一致、翻訳しない語の消失、用語表の訳語が使われていない</li>
+    <li><span class="warn">要確認</span>：原文のまま残っている文言、短いUIで訳が長くなりすぎているもの（表示幅の目安。全角は2として数えます）</li>
+  </ul>
+  <p class="note">ネストしたJSONは <code>a.b</code> の形に平坦化して比べます。訳の自然さ・文脈上の正しさ・アプリでの表示は確認できません（人間による校正ではありません）。<code>{名前}</code> のように英数字以外を含むプレースホルダーは検出しません。</p>
+</div>
+
+<div class="card">
+  <h2>翻訳そのものを任せたい場合</h2>
+  <p class="note">英語のUI文言を日本語にする作業（このチェックの結果レポート・英日対照表・用語表つき）は、<a href="https://coconala.com/services/4449165" target="_blank" rel="noopener">ココナラ（有料・見積り相談制）</a>でも受け付けています。チェッカーは今後も無料です。</p>
+</div>
+
+<p class="note">このツールは生成AI（Claude）を使って作成し、架空のサンプルデータで、手元の検査プログラムと同じ結果になることを確認しています。処理はすべてブラウザ内で行われます。</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const SAMPLE = __SAMPLE__;
+let files = { src: null, dst: null, glo: null }, rows = [];
+const PH = () => /\{\{\s*\w+\s*\}\}|\{\w+\}|%(?:\d+\$)?[sd@f]|%%|<[^>]+>|\\n|\n/g;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function flatten(d, prefix = "", out = {}) {
+  for (const [k, v] of Object.entries(d)) {
+    if (v && typeof v === "object" && !Array.isArray(v)) flatten(v, prefix + k + ".", out);
+    else out[prefix + k] = v;
+  }
+  return out;
+}
+function width(s) {
+  let w = 0;
+  for (const c of s) w += /[ᄀ-ᅟ⺀-〾ぁ-㏿㐀-䶿一-鿿ꀀ-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]|[\u{20000}-\u{3FFFD}]/u.test(c) ? 2 : 1;
+  return w;
+}
+function count(list) { const m = new Map(); for (const x of list) m.set(x, (m.get(x) || 0) + 1); return m; }
+function sameCount(a, b) { const x = count(a), y = count(b); if (x.size !== y.size) return false; for (const [k, v] of x) if (y.get(k) !== v) return false; return true; }
+function parseCSV(text) {
+  const lines = text.replace(/^﻿/, "").split(/\r?\n/).filter(l => l.trim());
+  const head = lines.shift().split(",").map(s => s.trim());
+  return lines.map(l => { const c = l.split(","); return Object.fromEntries(head.map((h, i) => [h, (c[i] || "").trim()])); });
+}
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function check(en, ja, glossary) {
+  const fails = [], warns = [];
+  for (const k of Object.keys(en)) if (!(k in ja)) fails.push(["欠落", k, "訳がない"]);
+  for (const k of Object.keys(ja)) if (!(k in en)) fails.push(["余分なキー", k, "原文にないキー"]);
+  const keep = glossary.filter(g => g.ja === g.en);
+  for (const k of Object.keys(en).filter(k => k in ja).sort()) {
+    const s = String(en[k]), t = ja[k];
+    if (typeof t !== "string" || !t.trim()) { fails.push(["空訳", k, ""]); continue; }
+    const ps = s.match(PH()) || [], pt = t.match(PH()) || [];
+    if (!sameCount(ps, pt)) { const v = x => x === "\n" ? "改行" : x; fails.push(["プレースホルダー/タグ不一致", k, `原文 [${ps.map(v).join(", ")}] / 訳 [${pt.map(v).join(", ")}]`]); }
+    if (t === s && /[A-Za-z]{3,}/.test(s) && !/^[A-Z][\w ]+$/.test(s)) warns.push(["原文のまま", k, s]);
+    const plain = s.replace(PH(), "");
+    for (const g of keep) if (s.includes(g.en) && !t.includes(g.en)) fails.push(["固有名詞の改変", k, g.en]);
+    let checked = plain; for (const g of keep) checked = checked.split(g.en).join("");
+    for (const g of glossary) {
+      if (keep.includes(g)) continue;
+      if (new RegExp("\\b" + reEsc(g.en), "i").test(checked) && !t.includes(g.ja)) fails.push(["用語表不一致", k, `${g.en} → ${g.ja} が訳にない`]);
+    }
+    const tw = width(t.replace(PH(), "")), pl = [...plain].length;
+    if (tw > Math.max(pl, 8) * 1.5 && pl <= 20) warns.push(["表示幅（短いUI）", k, `原文${pl}字 / 訳 幅${tw}`]);
+  }
+  return { fails, warns, nSrc: Object.keys(en).length, nDst: Object.keys(ja).length };
+}
+
+function show(r) {
+  rows = [...r.fails.map(x => ["不合格", ...x]), ...r.warns.map(x => ["要確認", ...x])];
+  $("summary").innerHTML = `原文 ${r.nSrc} 文言 / 訳 ${r.nDst} 文言 — <span class="bad">不合格 ${r.fails.length} 件</span> / <span class="warn">要確認 ${r.warns.length} 件</span>`;
+  $("table").querySelector("tbody").innerHTML = rows.length ? rows.map(([a, b, c, d]) => `<tr><td class="${a === "不合格" ? "bad" : "warn"}">${a}</td><td>${esc(b)}</td><td>${esc(c)}</td><td>${esc(d)}</td></tr>`).join("") : '<tr><td colspan="4">見つかった問題はありません</td></tr>';
+  $("result").classList.remove("hide");
+}
+
+async function readText(f) { return f ? (await f.text()) : null; }
+["src", "dst", "glo"].forEach(id => $(id).addEventListener("change", e => { files[id] = e.target.files[0] || null; $("run").disabled = !(files.src && files.dst); }));
+$("run").addEventListener("click", async () => {
+  try {
+    const en = flatten(JSON.parse(await readText(files.src))), ja = flatten(JSON.parse(await readText(files.dst)));
+    const glo = files.glo ? parseCSV(await readText(files.glo)) : [];
+    show(check(en, ja, glo));
+  } catch (e) { $("summary").textContent = "JSONとして読み込めませんでした: " + e.message; $("table").querySelector("tbody").innerHTML = ""; $("result").classList.remove("hide"); }
+});
+$("demo").addEventListener("click", () => show(check(flatten(SAMPLE.en), flatten(SAMPLE.ja), SAMPLE.glossary)));
+$("dl").addEventListener("click", () => {
+  const q = v => /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+  const csv = "﻿" + [["判定", "種類", "キー", "内容"], ...rows].map(r => r.map(q).join(",")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "翻訳チェック結果.csv"; a.click();
+});
+</script>
+</body>
+</html>
