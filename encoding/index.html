@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSV 文字コード変換（UTF-8 ⇄ Shift_JIS・BOM付き）無料・ブラウザ内で完結</title>
+<meta name="description" content="CSVの文字化けを直す無料ツール。UTF-8、Shift_JIS(CP932)、BOM付きUTF-8を相互に変換。ファイルはアップロードされず、ブラウザ内だけで処理されます。">
+<link rel="canonical" href="https://novaialabs-commits.github.io/csv-merge-tool/encoding/">
+<style>
+:root{--ink:#1F2937;--sub:#6B7280;--accent:#0F766E;--line:#D1D5DB;--bg:#F8FAFC;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--ink:#E5E7EB;--sub:#9CA3AF;--accent:#2DD4BF;--line:#374151;--bg:#111827;--card:#1F2937}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.7}
+main{max-width:760px;margin:0 auto;padding:32px 16px 64px}h1{font-size:1.5rem}h2{font-size:1.15rem;margin-top:2rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0}
+select,button,input[type=file]{font:inherit;padding:8px;margin:4px 0}button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 16px;cursor:pointer}
+pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);padding:8px;border-radius:6px;max-height:200px;overflow:auto}
+.sub{color:var(--sub);font-size:.9rem}a{color:var(--accent)}
+</style>
+</head>
+<body><main>
+<h1>CSV 文字コード変換</h1>
+<p class="sub">文字化けしたCSVを直します。ファイルは外部へ送信されず、お使いのブラウザ内だけで処理されます。</p>
+<div class="card">
+<label>1. CSVファイルを選ぶ<br><input type="file" id="f" accept=".csv,.txt,text/csv"></label><br>
+<label>2. 元の文字コード<br><select id="from"><option value="auto">自動判定</option><option value="utf-8">UTF-8</option><option value="shift_jis">Shift_JIS (CP932)</option></select></label><br>
+<label>3. 変換後<br><select id="to"><option value="utf8bom">UTF-8（BOM付き）… Excelで開くならこれ</option><option value="utf8">UTF-8（BOMなし）</option><option value="sjis">Shift_JIS (CP932)</option></select></label><br>
+<button id="go">変換してダウンロード</button>
+<p id="msg" class="sub"></p>
+<p class="sub">プレビュー（先頭部分）</p><pre id="prev">（ファイルを選ぶと表示されます）</pre>
+</div>
+<h2>よくある質問</h2>
+<p><b>Excelで開くと文字化けします。</b> UTF-8（BOM付き）に変換して保存し直すと、ダブルクリックで正しく開けることが多いです。詳しくは <a href="../articles/csv-mojibake.html">CSVの文字化けの原因と直し方</a>。</p>
+<p><b>Shift_JISにすると文字が消えます。</b> 機種依存文字や絵文字はShift_JISで表せないため、「?」に置き換わります。変換後に件数を確認してください。</p>
+<h2>関連</h2>
+<p><a href="../">CSV・Excel 結合と重複削除ツール</a> / <a href="../articles/">解説記事一覧</a></p>
+<p class="sub">売上CSVの重複チェックと月別集計をExcelで行いたい方へ：<a href="https://novaialabs.booth.pm/items/8993833">重複候補チェックExcel（500円）</a></p>
+</main>
+<script>
+const $=id=>document.getElementById(id);let buf=null;
+function dec(b,enc){return new TextDecoder(enc).decode(b)}
+function detect(b){try{new TextDecoder('utf-8',{fatal:true}).decode(b);return 'utf-8'}catch(e){return 'shift_jis'}}
+function encodeSJIS(s){ // Unicode -> CP932 via reverse table built from TextDecoder
+  if(!encodeSJIS.map){const m=new Map();const one=new Uint8Array(1),two=new Uint8Array(2);
+    const d=new TextDecoder('shift_jis');
+    for(let c=0x20;c<0x7f;c++){m.set(String.fromCharCode(c),[c])}
+    for(let c=0xa1;c<=0xdf;c++){m.set(d.decode(Uint8Array.of(c)),[c])}
+    for(let a=0x81;a<=0xfc;a++){if(a>0x9f&&a<0xe0)continue;for(let b=0x40;b<=0xfc;b++){if(b===0x7f)continue;const ch=d.decode(Uint8Array.of(a,b));if(ch.length>=1&&ch!=='�'&&!m.has(ch))m.set(ch,[a,b])}}
+    for(let a=0xe0;a<=0xfc;a++){for(let b=0x40;b<=0xfc;b++){if(b===0x7f)continue;const ch=d.decode(Uint8Array.of(a,b));if(ch.length>=1&&ch!=='�'&&!m.has(ch))m.set(ch,[a,b])}}
+    encodeSJIS.map=m}
+  const out=[];let lost=0;for(const ch of s){if(ch==='\n'||ch==='\r'||ch==='\t'){out.push(ch.charCodeAt(0));continue}
+    const v=encodeSJIS.map.get(ch);if(v)out.push(...v);else{out.push(0x3f);lost++}}
+  return {bytes:Uint8Array.from(out),lost}}
+$('f').onchange=async e=>{const f=e.target.files[0];if(!f)return;buf=new Uint8Array(await f.arrayBuffer());
+  let b=buf;if(b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF)b=b.slice(3);
+  const enc=detect(b);$('msg').textContent='自動判定: '+(enc==='utf-8'?'UTF-8':'Shift_JIS');$('prev').textContent=dec(b,enc).slice(0,600)};
+$('go').onclick=()=>{if(!buf){$('msg').textContent='先にファイルを選んでください';return}
+  let b=buf;if(b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF)b=b.slice(3);
+  const from=$('from').value==='auto'?detect(b):$('from').value;const text=dec(b,from);const to=$('to').value;let out,note='';
+  if(to==='sjis'){const r=encodeSJIS(text);out=r.bytes;if(r.lost)note='（Shift_JISで表せない文字 '+r.lost+' 個を「?」に置き換えました）'}
+  else{const e8=new TextEncoder().encode(text);out=to==='utf8bom'?Uint8Array.from([0xEF,0xBB,0xBF,...e8]):e8}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'text/csv'}));a.download='converted.csv';a.click();$('msg').textContent='変換しました。'+note};
+</script>
+</body></html>
