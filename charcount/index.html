@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文字数カウント（空白・改行あり/なし・バイト数・行数）無料・ブラウザ内で完結</title>
+<meta name="description" content="文字数を数える無料ツール。空白・改行を含む／含まない文字数、行数、段落数、原稿用紙の枚数、UTF-8のバイト数をリアルタイムで表示。入力した文章は送信されません。">
+<link rel="canonical" href="https://novaialabs-commits.github.io/csv-merge-tool/charcount/">
+<style>
+:root{--ink:#1F2937;--sub:#6B7280;--accent:#0F766E;--line:#D1D5DB;--bg:#F8FAFC;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--ink:#E5E7EB;--sub:#9CA3AF;--accent:#2DD4BF;--line:#374151;--bg:#111827;--card:#1F2937}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.7}
+main{max-width:760px;margin:0 auto;padding:32px 16px 64px}h1{font-size:1.5rem}h2{font-size:1.15rem;margin-top:2rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0}
+textarea{width:100%;min-height:200px;font:inherit;padding:10px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px;text-align:right}th:first-child,td:first-child{text-align:left}
+.big{font-size:2rem;font-weight:700;color:var(--accent)}.sub{color:var(--sub);font-size:.9rem}a{color:var(--accent)}
+</style>
+</head>
+<body><main>
+<h1>文字数カウント</h1>
+<p class="sub">入力した文章は端末内だけで処理され、送信・保存されません。</p>
+<div class="card">
+<textarea id="t" placeholder="ここに文章を貼り付けてください"></textarea>
+<p>文字数（空白・改行を含む） <span class="big" id="c1">0</span></p>
+<table>
+<tr><td>空白（スペース・タブ）を除く</td><td id="c2">0</td></tr>
+<tr><td>空白・改行をすべて除く</td><td id="c3">0</td></tr>
+<tr><td>行数</td><td id="c4">0</td></tr>
+<tr><td>段落数（空行区切り）</td><td id="c5">0</td></tr>
+<tr><td>原稿用紙（400字詰め）の枚数</td><td id="c6">0</td></tr>
+<tr><td>UTF-8のバイト数</td><td id="c7">0</td></tr>
+</table>
+</div>
+<h2>数え方について</h2>
+<p>絵文字や一部の漢字は、1文字でもUTF-16では2つの単位になります。このツールは、見た目の1文字を1文字として数えます（結合文字を含む絵文字は1文字として数える場合があります）。ライティング案件の文字数条件は、依頼先の数え方（空白・改行の扱い）に合わせて、上の表から選んでください。</p>
+<h2>関連</h2>
+<p><a href="../wareki/">和暦⇄西暦 変換</a> / <a href="../tax/">消費税・インボイス 端数処理計算</a> / <a href="../withholding/">源泉徴収税額 計算</a> / <a href="../encoding/">CSV 文字コード変換</a> / <a href="../">CSV・Excel 結合と重複削除</a></p>
+<p class="sub">売上CSVの重複チェックと月別集計をExcelで行いたい方へ：<a href="https://novaialabs.booth.pm/items/8993833">重複候補チェックExcel（500円）</a></p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const seg=typeof Intl!=='undefined'&&Intl.Segmenter?new Intl.Segmenter('ja',{granularity:'grapheme'}):null;
+const len=s=>seg?[...seg.segment(s)].length:[...s].length;
+function upd(){const s=$('t').value.replace(/\r\n?/g,'\n');
+ $('c1').textContent=len(s);
+ $('c2').textContent=len(s.replace(/[ \t　]/g,''));
+ $('c3').textContent=len(s.replace(/\s/g,''));
+ $('c4').textContent=s===''?0:s.split('\n').length;
+ $('c5').textContent=s.trim()===''?0:s.trim().split(/\n\s*\n/).length;
+ $('c6').textContent=(len(s.replace(/\n/g,''))/400).toFixed(2);
+ $('c7').textContent=new TextEncoder().encode(s).length}
+$('t').addEventListener('input',upd);upd();
+</script>
+</body></html>
